@@ -1,97 +1,85 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>البحث في الفتاوى</title>
-<style>
-body {
-  font-family: "Cairo", sans-serif;
-  background: #f9f9f9;
-  padding: 20px;
-  text-align: center;
-}
-input {
-  width: 70%;
-  padding: 10px;
-  font-size: 18px;
-}
-button {
-  padding: 10px 20px;
-  font-size: 18px;
-}
-#results {
-  margin-top: 25px;
-  text-align: right;
-  direction: rtl;
-}
-.result {
-  background: white;
-  margin: 8px 0;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📚 موسوعة الفتاوى الذكية</title>
+  <style>
+    body {font-family:"Cairo",sans-serif;background:#f8f9fa;color:#222;text-align:center;margin:40px;}
+    h1 {color:#0078d7;margin-bottom:25px;}
+    input{width:60%;max-width:600px;padding:10px 15px;font-size:18px;border-radius:10px;border:1px solid #ccc;text-align:right;}
+    button{padding:10px 25px;font-size:18px;border:none;border-radius:10px;background:#0078d7;color:#fff;cursor:pointer;}
+    button:hover{background:#005fa3;}
+    .result{background:#fff;text-align:right;padding:15px;border-radius:12px;margin:10px auto;width:90%;max-width:800px;box-shadow:0 1px 6px rgba(0,0,0,0.1);}
+    .question{font-weight:bold;color:#000;margin-bottom:10px;}
+    .answer{line-height:1.8;white-space:pre-wrap;color:#333;}
+    .source{margin-top:8px;font-size:14px;color:#666;}
+    .loading{color:#0078d7;font-size:20px;margin-top:10px;}
+    .hl{background:yellow;border-radius:3px;padding:0 3px;}
+    a.fatwa-link{color:#0078d7;text-decoration:underline;}
+  </style>
 </head>
 <body>
-  <h1>🔍 البحث في الفتاوى</h1>
-  <input type="text" id="query" placeholder="اكتب كلمة البحث">
-  <button onclick="searchFatwa()">بحث</button>
+  <h1>📚 البحث في الفتاوى</h1>
 
+  <div class="search-box">
+    <input id="query" placeholder="اكتب كلمة البحث (مثلاً: الصلاة)">
+    <button onclick="searchFatwas()">بحث</button>
+  </div>
+
+  <div id="status" class="loading"></div>
   <div id="results"></div>
 
-<script>
-async function searchFatwa() {
-  const query = document.getElementById('query').value.trim();
-  const resultsDiv = document.getElementById('results');
-  resultsDiv.innerHTML = '⏳ جاري البحث...';
+  <script>
+    // رابط الـ API الأساسي
+    const BASE = "https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/fatwas/search/";
 
-  if (!query) {
-    resultsDiv.innerHTML = '⚠️ الرجاء كتابة كلمة للبحث.';
-    return;
-  }
+    // 🔹 تحويل "الفتوى رقم ####" إلى رابط قابل للنقر
+    function linkifyFatwaNumbers(text) {
+      return text.replace(/الفتوى\s*رقم[:：]?\s*(\d+)/g, (match, num) => {
+        const url = `${BASE}${num}`;
+        return `<a href="${url}" target="_blank" class="fatwa-link">${match}</a>`;
+      });
+    }
 
-  const apiURL = `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/fatwas/search/${encodeURIComponent(query)}`;
+    async function searchFatwas() {
+      const q = document.getElementById("query").value.trim();
+      const status = document.getElementById("status");
+      const results = document.getElementById("results");
+      results.innerHTML = "";
+      if (!q){status.textContent="📝 اكتب كلمة للبحث أولاً.";return;}
 
-  try {
-    const response = await fetch(apiURL, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
+      status.textContent="⏳ جاري البحث...";
+      try{
+        const res=await fetch(BASE+encodeURIComponent(q));
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        const data=await res.json();
+        const items=data.items||data||[];
+        if(!items.length){status.textContent="❌ لا توجد نتائج.";return;}
+
+        status.textContent=`✅ عدد النتائج: ${items.length}`;
+        const regex=new RegExp(q,"gi");
+        results.innerHTML=items.map(f=>{
+          const qMarked=(f.question||"").replace(regex,m=>`<span class="hl">${m}</span>`);
+          const aMarked=(f.answer||"").replace(regex,m=>`<span class="hl">${m}</span>`);
+          const linkedAnswer=linkifyFatwaNumbers(aMarked);
+          return `
+            <div class="result">
+              <div class="question">${qMarked}</div>
+              <div class="answer">${linkedAnswer}</div>
+              <div class="source">📄 المصدر: ${f.source||""}</div>
+            </div>
+          `;
+        }).join("");
+      }catch(err){
+        console.error(err);
+        status.textContent="⚠️ حدث خطأ أثناء الجلب. تأكد أن الرابط يعمل.";
       }
+    }
+
+    document.getElementById("query").addEventListener("keydown",e=>{
+      if(e.key==="Enter") searchFatwas();
     });
-
-    // تحقق من حالة CORS أو الاستجابة
-    if (!response.ok) {
-      throw new Error(`خطأ في الاتصال (${response.status})`);
-    }
-
-    const data = await response.json();
-    console.log('✅ النتيجة:', data);
-
-    if (!data.items || data.items.length === 0) {
-      resultsDiv.innerHTML = '🚫 لا توجد نتائج.';
-      return;
-    }
-
-resultsDiv.innerHTML = data.items.map(item => `
-  <div class="result">
-    <div><strong>🟢 السؤال:</strong> ${item.question || 'غير متوفر'}</div>
-    <div><strong>📖 الجواب:</strong><br>${(item.text || '').replace(/\n/g, '<br>')}</div>
-    <div style="margin-top:5px; font-size:14px; color:#555;">
-      <strong>📁 المصدر:</strong> ${item.source || 'غير محدد'}
-    </div>
-  </div>
-`).join('');
-
-
-  } catch (error) {
-    console.error('❌ فشل الاتصال:', error);
-    resultsDiv.innerHTML = `❌ فشل الاتصال بالخدمة: ${error.message}<br>
-    <small>تحقق من إعدادات CORS في Oracle APEX (Allowed Origins).</small>`;
-  }
-}
-</script>
+  </script>
 </body>
 </html>
