@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>عرض الفتوى</title>
+<style>
+body{font-family:"Cairo",sans-serif;background:#f9f9f9;color:#222;text-align:right;padding:40px;}
+.container{max-width:800px;margin:auto;background:white;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+h1{color:#0078d7;text-align:center;}
+.answer{margin-top:20px;line-height:1.8;white-space:pre-wrap;}
+.source{color:#777;margin-top:10px;text-align:left;font-size:14px;}
+.back{display:block;text-align:center;margin-top:30px;}
+.back a{background:#0078d7;color:#fff;padding:10px 25px;border-radius:8px;text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📜 نص الفتوى</h1>
+  <div id="content">جارٍ التحميل...</div>
+  <div class="back"><a href="fatwa-smart.html">🔙 العودة للبحث</a></div>
+</div>
+
+<script>
+const params=new URLSearchParams(location.search);
+const id=params.get("id");
+const API=`https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/fatwas/search/${id}`;
+
+async function loadFatwa(){
+  const content=document.getElementById("content");
+  try{
+    const res=await fetch(API);
+    const data=await res.json();
+    const f=data.items?.[0]||data;
+    content.innerHTML=`
+      <div class="question"><strong>${f.question||"بدون سؤال"}</strong></div>
+      <div class="answer">${f.answer||"بدون جواب"}</div>
+      <div class="source">📎 المصدر: ${f.source||""}</div>
+    `;
+  }catch(e){
+    content.textContent="⚠️ تعذر تحميل الفتوى.";
+  }
+}
+loadFatwa();
+</script>
+</body>
+</html>
