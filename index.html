@@ -1,423 +1,85 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>بوابة الفتاوى</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Added Babel to transpile JSX in the browser -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-      body {
-        font-family: 'Tajawal', sans-serif;
-      }
-      /* 
-        Initial loader styles to provide immediate feedback to the user.
-        This content inside #root will be replaced by React once it loads.
-      */
-      .initial-loader {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        gap: 1.5rem;
-        color: #065f46; /* Corresponds to text-emerald-800 for theme consistency */
-      }
-      .initial-loader .spinner {
-        width: 4rem; /* 64px */
-        height: 4rem; /* 64px */
-        border: 4px dashed #d97706; /* Corresponds to border-amber-600 */
-        border-radius: 50%;
-        animation: spin 1.5s linear infinite;
-      }
-      .initial-loader .loader-text {
-        font-size: 1.25rem; /* text-xl */
-        font-weight: 500;
-      }
-      @keyframes spin {
-        from {
-          transform: rotate(0deg);
-        }
-        to {
-          transform: rotate(360deg);
-        }
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.4",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
-  }
-}
-</script>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📚 موسوعة الفتاوى الذكية</title>
+  <style>
+    body {font-family:"Cairo",sans-serif;background:#f8f9fa;color:#222;text-align:center;margin:40px;}
+    h1 {color:#0078d7;margin-bottom:25px;}
+    input{width:60%;max-width:600px;padding:10px 15px;font-size:18px;border-radius:10px;border:1px solid #ccc;text-align:right;}
+    button{padding:10px 25px;font-size:18px;border:none;border-radius:10px;background:#0078d7;color:#fff;cursor:pointer;}
+    button:hover{background:#005fa3;}
+    .result{background:#fff;text-align:right;padding:15px;border-radius:12px;margin:10px auto;width:90%;max-width:800px;box-shadow:0 1px 6px rgba(0,0,0,0.1);}
+    .question{font-weight:bold;color:#000;margin-bottom:10px;}
+    .answer{line-height:1.8;white-space:pre-wrap;color:#333;}
+    .source{margin-top:8px;font-size:14px;color:#666;}
+    .loading{color:#0078d7;font-size:20px;margin-top:10px;}
+    .hl{background:yellow;border-radius:3px;padding:0 3px;}
+    a.fatwa-link{color:#0078d7;text-decoration:underline;}
+  </style>
 </head>
-  <body class="bg-stone-50 text-stone-800">
-    <div id="root">
-      <!-- This content is shown while the React app is loading. -->
-      <!-- It will be replaced automatically once the app mounts. -->
-      <div class="initial-loader">
-        <div class="spinner"></div>
-        <p class="loader-text">جاري تحميل بوابة الفتاوى...</p>
-      </div>
-    </div>
-    <script type="text/babel" data-type="module">
-// --- Start of inlined script ---
+<body>
+  <h1>📚 البحث في الفتاوى</h1>
 
-import React, { useState, useEffect, useMemo } from 'react';
-import ReactDOM from 'react-dom/client';
-import { HashRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
+  <div class="search-box">
+    <input id="query" placeholder="اكتب كلمة البحث (مثلاً: الصلاة)">
+    <button onclick="searchFatwas()">بحث</button>
+  </div>
 
-// --- Inlined from services/api.ts ---
-const API_BASE_URL = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/fatwas';
+  <div id="status" class="loading"></div>
+  <div id="results"></div>
 
-const shuffleArray = (array) => {
-  const newArr = [...array];
-  for (let i = newArr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
-  }
-  return newArr;
-};
+  <script>
+    // رابط الـ API الأساسي
+    const BASE = "https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/fatwas/search/";
 
-const searchFatwas = async (query) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(query)}`, {
-      cache: 'no-store'
+    // 🔹 تحويل "الفتوى رقم ####" إلى رابط قابل للنقر
+    function linkifyFatwaNumbers(text) {
+      return text.replace(/الفتوى\s*رقم[:：]?\s*(\d+)/g, (match, num) => {
+        const url = `fatwa_view.html?id=${num}`;
+        return `<a href="${url}" target="_blank" class="fatwa-link">${match}</a>`;
+      });
+    }
+
+    async function searchFatwas() {
+      const q = document.getElementById("query").value.trim();
+      const status = document.getElementById("status");
+      const results = document.getElementById("results");
+      results.innerHTML = "";
+      if (!q){status.textContent="📝 اكتب كلمة للبحث أولاً.";return;}
+
+      status.textContent="⏳ جاري البحث...";
+      try{
+        const res=await fetch(BASE+encodeURIComponent(q));
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        const data=await res.json();
+        const items=data.items||data||[];
+        if(!items.length){status.textContent="❌ لا توجد نتائج.";return;}
+
+        status.textContent=`✅ عدد النتائج: ${items.length}`;
+        const regex=new RegExp(q,"gi");
+        results.innerHTML=items.map(f=>{
+          const qMarked=(f.question||"").replace(regex,m=>`<span class="hl">${m}</span>`);
+          const aMarked=(f.answer||"").replace(regex,m=>`<span class="hl">${m}</span>`);
+          const linkedAnswer=linkifyFatwaNumbers(aMarked);
+          return `
+            <div class="result">
+              <div class="question">${qMarked}</div>
+              <div class="answer">${linkedAnswer}</div>
+              <div class="source">📄 المصدر: ${f.source||""}</div>
+            </div>
+          `;
+        }).join("");
+      }catch(err){
+        console.error(err);
+        status.textContent="⚠️ حدث خطأ أثناء الجلب. تأكد أن الرابط يعمل.";
+      }
+    }
+
+    document.getElementById("query").addEventListener("keydown",e=>{
+      if(e.key==="Enter") searchFatwas();
     });
-    if (!response.ok) {
-      throw new Error(`API call failed with status: ${response.status}`);
-    }
-    const data = await response.json();
-    return data.items || [];
-  } catch (error) {
-    console.error(`Failed to search for fatwas with query "${query}":`, error);
-    return [];
-  }
-};
-
-const getFatwaById = async (id) => {
-  try {
-    const searchQueries = [
-      id,
-      `fatwa_${id}`,
-      `رقم ${id}`,
-      `فتوى رقم ${id}`,
-    ];
-
-    const promises = searchQueries.map(query => searchFatwas(query));
-    const resultsFromAllSearches = await Promise.all(promises);
-
-    const allResults = resultsFromAllSearches.flat();
-    const uniqueResults = allResults.filter(
-        (fatwa, index, self) => index === self.findIndex((f) => f.id === fatwa.id)
-    );
-
-    if (uniqueResults.length > 0) {
-        let match = uniqueResults.find(f => f.id.toString() === id);
-        if (match) return match;
-
-        match = uniqueResults.find(f => f.source.includes(id));
-        if (match) return match;
-
-        return uniqueResults[0];
-    }
-    
-    console.warn(`All targeted searches for ID ${id} failed. Using broad fallback.`);
-    const broadResults = await searchFatwas('حكم'); 
-    const fallbackMatch = broadResults.find(f => f.id.toString() === id || f.source.includes(id));
-    
-    return fallbackMatch || null;
-
-  } catch (error) {
-    console.error(`Failed to get fatwa by ID ${id}:`, error);
-    return null;
-  }
-};
-
-const getRandomFatwas = async (count) => {
-  try {
-    const fatwas = await searchFatwas('حكم');
-    if (fatwas.length === 0) return [];
-    
-    const shuffled = shuffleArray(fatwas);
-    return shuffled.slice(0, count);
-  } catch (error) {
-    console.error("Failed to get random fatwas:", error);
-    return [];
-  }
-};
-
-
-// --- Inlined from App.tsx ---
-
-// SVG Icons
-const SearchIcon = ({ className }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-    </svg>
-);
-
-const BookIcon = ({ className }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-    </svg>
-);
-
-
-// UI Components
-const Spinner = () => (
-    <div className="flex justify-center items-center p-8">
-        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-amber-600"></div>
-    </div>
-);
-
-const Header = () => (
-    <header className="bg-emerald-800 text-white shadow-lg">
-        <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
-            <Link to="/" className="flex items-center space-x-2 rtl:space-x-reverse">
-                <BookIcon className="w-8 h-8 text-amber-300" />
-                <h1 className="text-2xl font-bold text-amber-300">بوابة الفتاوى</h1>
-            </Link>
-            <div className="flex space-x-4 rtl:space-x-reverse">
-                <Link to="/" className="hover:text-amber-300 transition-colors">هل يجوز</Link>
-            </div>
-        </nav>
-    </header>
-);
-
-const SearchBar = () => {
-    const [query, setQuery] = useState('');
-    const navigate = useNavigate();
-
-    const handleSearch = (e) => {
-        e.preventDefault();
-        if (query.trim()) {
-            navigate(`/search/${query.trim()}`);
-            setQuery('');
-        }
-    };
-
-    return (
-        <form onSubmit={handleSearch} className="relative w-full max-w-2xl mx-auto my-8">
-            <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="ابحث عن فتوى..."
-                className="w-full py-3 pr-12 pl-4 text-lg border-2 border-stone-300 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-shadow shadow-sm"
-            />
-            <button type="submit" className="absolute top-1/2 -translate-y-1/2 right-3 text-stone-500 hover:text-amber-600">
-                <SearchIcon className="w-6 h-6" />
-            </button>
-        </form>
-    );
-};
-
-// Component to render text with clickable fatwa IDs
-const LinkifyFatwaIds = ({ text }) => {
-    const parts = useMemo(() => {
-        if (!text) return [];
-        // Regex to find numbers of 5 or more digits which are likely fatwa IDs
-        const regex = /(\d{5,})/g;
-        return text.split(regex).map((part, index) => {
-            if (part.match(regex)) {
-                return (
-                    <Link
-                        key={index}
-                        to={`/fatwa/${part}`}
-                        className="text-emerald-700 font-bold hover:underline bg-emerald-100 px-1 rounded"
-                    >
-                        {part}
-                    </Link>
-                );
-            }
-            return part;
-        });
-    }, [text]);
-
-    return <p className="whitespace-pre-wrap leading-loose">{parts}</p>;
-};
-
-
-// Page Components
-const HomePage = () => {
-    const [fatwas, setFatwas] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchRandom = async () => {
-            setLoading(true);
-            const data = await getRandomFatwas(10); // Fetch 10 random fatwas
-            setFatwas(data);
-            setLoading(false);
-        };
-        fetchRandom();
-    }, []);
-
-    return (
-        <div className="container mx-auto px-4 py-8">
-            <h2 className="text-3xl font-bold text-center text-emerald-800 mb-4">هل يجوز؟</h2>
-            <p className="text-center text-stone-600 mb-8 max-w-3xl mx-auto">تصفح مجموعة من الفتاوى المختارة للإجابة على تساؤلاتك الدينية. استخدم محرك البحث أدناه للعثور على فتوى معينة.</p>
-            <SearchBar />
-
-            {loading ? <Spinner /> : (
-                 <div className="space-y-4 max-w-4xl mx-auto">
-                    {fatwas.map(fatwa => (
-                        <Link to={`/fatwa/${fatwa.id}`} key={fatwa.id} className="block group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-r-4 border-amber-500">
-                            <p className="font-semibold text-stone-800 mb-1 text-lg line-clamp-2">
-                                {fatwa.question}
-                            </p>
-                            <span className="text-emerald-600 font-bold group-hover:underline text-sm">أكمل القراءة...</span>
-                        </Link>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
-
-const SearchPage = () => {
-    const { query } = useParams();
-    const [results, setResults] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const performSearch = async () => {
-            if (query) {
-                setLoading(true);
-                const data = await searchFatwas(query);
-                setResults(data);
-                setLoading(false);
-            }
-        };
-        performSearch();
-    }, [query]);
-
-    return (
-        <div className="container mx-auto px-4 py-8">
-            <h2 className="text-3xl font-bold text-emerald-800 mb-6">نتائج البحث عن: "{query}"</h2>
-            <SearchBar />
-            {loading ? <Spinner /> : (
-                results.length > 0 ? (
-                    <div className="space-y-4">
-                        {results.map(fatwa => (
-                            <Link to={`/fatwa/${fatwa.id}`} key={fatwa.id} className="block">
-                                <div className="bg-white p-6 rounded-lg shadow-md hover:bg-stone-50 transition-colors">
-                                    <h3 className="font-bold text-xl text-emerald-700 mb-2">{fatwa.question}</h3>
-                                    <p className="text-stone-600 line-clamp-2">{fatwa.answer}</p>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-center text-stone-600 text-xl py-10">لم يتم العثور على نتائج.</p>
-                )
-            )}
-        </div>
-    );
-};
-
-const FatwaPage = () => {
-    const { id } = useParams();
-    const [fatwa, setFatwa] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        const fetchFatwa = async () => {
-            window.scrollTo(0, 0);
-
-            if (id) {
-                setLoading(true);
-                setError(null);
-                setFatwa(null);
-                
-                const data = await getFatwaById(id);
-                
-                if (data) {
-                    setFatwa(data);
-                } else {
-                    setError(`لم نتمكن من العثور على الفتوى رقم ${id}.`);
-                }
-                setLoading(false);
-            }
-        };
-        fetchFatwa();
-    }, [id]);
-
-    if (loading) return <Spinner />;
-    if (error) return <p className="text-center text-red-600 text-xl py-10">{error}</p>;
-    if (!fatwa) return <p className="text-center text-stone-600 text-xl py-10">الفتوى غير متوفرة.</p>;
-
-    return (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <div className="bg-white p-8 rounded-lg shadow-xl">
-                <h2 className="text-3xl font-bold text-emerald-800 mb-6 border-b-2 border-amber-400 pb-4">
-                    {fatwa.question}
-                </h2>
-                <div className="text-lg text-stone-700 space-y-4">
-                    <h3 className="font-bold text-2xl text-emerald-800">الجواب:</h3>
-                    <LinkifyFatwaIds text={fatwa.answer} />
-                </div>
-                <div className="mt-8 pt-4 border-t border-stone-200 text-sm text-stone-500">
-                    <p>المصدر: {fatwa.source}</p>
-                    <p>رقم الفتوى: {fatwa.id}</p>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const Footer = () => (
-    <footer className="bg-emerald-800 text-amber-200 mt-12 py-6">
-        <div className="container mx-auto text-center">
-            <p>&copy; {new Date().getFullYear()} بوابة الفتاوى. جميع الحقوق محفوظة.</p>
-        </div>
-    </footer>
-);
-
-const App = () => {
-    return (
-        <HashRouter>
-            <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow">
-                    <Routes>
-                        <Route path="/" element={<HomePage />} />
-                        <Route path="/search/:query" element={<SearchPage />} />
-                        <Route path="/fatwa/:id" element={<FatwaPage />} />
-                    </Routes>
-                </main>
-                <Footer />
-            </div>
-        </HashRouter>
-    );
-};
-
-
-// --- Inlined from index.tsx ---
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
-}
-
-const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
-
-// --- End of inlined script ---
-    </script>
-  </body>
+  </script>
+</body>
 </html>
