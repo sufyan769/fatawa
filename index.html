@@ -1,67 +1,103 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📚 البحث في الفتاوى</title>
-  <style>
-    body { font-family: "Cairo", sans-serif; text-align: center; background: #f7f9fc; color: #222; }
-    h1 { color: #007bff; margin-top: 40px; }
-    input { width: 60%; padding: 10px; font-size: 18px; border-radius: 8px; border: 1px solid #ccc; }
-    button { padding: 10px 20px; font-size: 18px; border: none; border-radius: 8px; background: #007bff; color: white; cursor: pointer; }
-    .result { background: white; margin: 20px auto; width: 80%; text-align: right; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    mark { background: yellow; }
-    .error { color: red; font-weight: bold; margin-top: 20px; white-space: pre-wrap; direction: ltr; text-align: left; }
-  </style>
+    <meta charset="UTF-8">
+    <title>البحث في الفتاوى</title>
+    <style>
+        /* (لا توجد تغييرات في هذا الجزء - يمكنك إضافة تنسيقك الخاص) */
+        body { font-family: Tahoma, Arial, sans-serif; padding: 20px; background-color: #f4f7f6; }
+        h1 { color: #0056b3; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        input[type="text"] { padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; width: 300px; }
+        button { padding: 10px 20px; background-color: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; }
+        button:hover { background-color: #004085; }
+        .fatwa { background-color: white; border: 1px solid #e0e0e0; padding: 15px; margin-top: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .question { font-weight: bold; color: #333; margin-bottom: 5px; }
+        .answer { margin-top: 10px; line-height: 1.6; color: #555; }
+        #results { margin-top: 20px; }
+        .error-message { color: red; font-weight: bold; padding: 10px; border: 1px solid #fdd; background-color: #fee; border-radius: 4px; }
+    </style>
 </head>
 <body>
-  <h1>📚 البحث في الفتاوى</h1>
-  <input id="query" placeholder="اكتب كلمة البحث (مثلاً: الصلاة)">
-  <button onclick="search()">بحث</button>
-  <div id="status"></div>
-  <div id="results"></div>
 
-  <script>
-    // 🔗 رابط الـ API المباشر من ORDS
-    const BASE = "https://cors.isomorphic-git.org/https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/fatwas/search/";
+    <h1>البحث في قاعدة بيانات الفتاوى</h1>
+    <input type="text" id="searchInput" placeholder="أدخل كلمة البحث هنا...">
+    <button onclick="searchFatwas()">بحث</button>
 
+    <div id="results">
+        <p>الرجاء إدخال كلمة للبحث والضغط على "بحث".</p>
+    </div>
 
-    async function search() {
-      const q = document.getElementById("query").value.trim();
-      const resultsDiv = document.getElementById("results");
-      const statusDiv = document.getElementById("status");
-      resultsDiv.innerHTML = "";
-      if (!q) return alert("أدخل كلمة للبحث");
+    <script>
+        // ⚠️ يجب أن ينتهي هذا الرابط بـ /search (بدون شرطة مائلة) ليعمل مع search/{q}
+        const API_BASE_URL = "https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/fatwas/search";
+        const resultsDiv = document.getElementById('results');
 
-      statusDiv.textContent = "🔎 جاري البحث...";
-      try {
-        const response = await fetch(BASE + encodeURIComponent(q));
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+        function searchFatwas() {
+            const searchQuery = document.getElementById('searchInput').value.trim();
+
+            if (searchQuery === "") {
+                resultsDiv.innerHTML = '<p class="error-message">الرجاء إدخال كلمة غير فارغة للبحث.</p>';
+                return;
+            }
+
+            resultsDiv.innerHTML = '<p style="color: #0056b3;">...جاري البحث</p>';
+
+            // 🚀 بناء الرابط باستخدام Path Parameter (يتطابق مع URI Template: search/{q})
+            // encodeURIComponent يضمن التعامل الصحيح مع المسافات والأحرف الخاصة في كلمة البحث
+            const finalURL = `${API_BASE_URL}/${encodeURIComponent(searchQuery)}`;
+            
+            // 🚀 استدعاء الـ API باستخدام Fetch
+            fetch(finalURL)
+                .then(response => {
+                    // التحقق من أن الاستجابة ناجحة (رموز 200-299)
+                    if (!response.ok) {
+                        // إظهار خطأ 400، 404، إلخ
+                        throw new Error(`خطأ في الـ API: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json(); // تحويل الاستجابة إلى كائن JSON
+                })
+                .then(data => {
+                    // بيانات API ORACLE تأتي غالباً تحت مفتاح "items"
+                    displayResults(data.items);
+                })
+                .catch(error => {
+                    resultsDiv.innerHTML = `<div class="error-message">
+                                                حدث خطأ أثناء الجلب: ${error.message}. <br>
+                                                الرجاء التأكد من: <br>
+                                                1. **إعدادات APEX** (URI Template هو **search/{q}**). <br>
+                                                2. **المعلمات** (إضافة المعلمة **q** في المعالج).
+                                            </div>`;
+                    console.error('Fetch Error:', error);
+                });
         }
 
-        const data = await response.json();
-        console.log("🔍 API Response:", data);
+        function displayResults(items) {
+            resultsDiv.innerHTML = ''; // مسح النتائج السابقة
 
-        if (!data.items || data.items.length === 0) {
-          statusDiv.textContent = "❌ لا توجد نتائج.";
-          return;
+            if (!items || items.length === 0) {
+                resultsDiv.innerHTML = '<p>لم يتم العثور على نتائج مطابقة.</p>';
+                return;
+            }
+
+            items.forEach(item => {
+                const fatwaDiv = document.createElement('div');
+                fatwaDiv.className = 'fatwa';
+                
+                // عرض السؤال والاجابة (تعديل أسماء الأعمدة إذا كانت مختلفة)
+                const q = document.createElement('div');
+                q.className = 'question';
+                q.innerHTML = `**السؤال:** ${item.question || 'لا يوجد سؤال'}`;
+                
+                const a = document.createElement('div');
+                a.className = 'answer';
+                a.innerHTML = `**الإجابة:** ${item.answer || 'لا توجد إجابة'}`;
+                
+                fatwaDiv.appendChild(q);
+                fatwaDiv.appendChild(a);
+                resultsDiv.appendChild(fatwaDiv);
+            });
         }
+    </script>
 
-        statusDiv.innerHTML = `✅ عدد النتائج: ${data.items.length}`;
-        data.items.forEach(fatwa => {
-          const div = document.createElement("div");
-          div.className = "result";
-          const qMarked = fatwa.question.replaceAll(q, `<mark>${q}</mark>`);
-          const aMarked = fatwa.answer.replaceAll(q, `<mark>${q}</mark>`);
-          div.innerHTML = `<h3>${qMarked}</h3><p>${aMarked}</p><small>📄 <a href="${fatwa.source}" target="_blank">${fatwa.source}</a></small>`;
-          resultsDiv.appendChild(div);
-        });
-      } catch (err) {
-        console.error("❌ Fetch error:", err);
-        statusDiv.innerHTML = `<div class="error">⚠️ خطأ أثناء الجلب:<br>${err.message}</div>`;
-      }
-    }
-  </script>
 </body>
 </html>
