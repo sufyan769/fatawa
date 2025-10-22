@@ -75,12 +75,16 @@ async function searchFatwa() {
       return;
     }
 
-    resultsDiv.innerHTML = data.items.map(item => `
-      <div class="result">
-        <strong>${item.title || 'بدون عنوان'}</strong><br>
-        ${item.text || ''}
-      </div>
-    `).join('');
+resultsDiv.innerHTML = data.items.map(item => `
+  <div class="result">
+    <div><strong>🟢 السؤال:</strong> ${item.question || 'غير متوفر'}</div>
+    <div><strong>📖 الجواب:</strong><br>${(item.text || '').replace(/\n/g, '<br>')}</div>
+    <div style="margin-top:5px; font-size:14px; color:#555;">
+      <strong>📁 المصدر:</strong> ${item.source || 'غير محدد'}
+    </div>
+  </div>
+`).join('');
+
 
   } catch (error) {
     console.error('❌ فشل الاتصال:', error);
