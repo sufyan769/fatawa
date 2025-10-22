@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>البحث في الفتاوى</title>
     <style>
-        /* (لا توجد تغييرات في هذا الجزء - يمكنك إضافة تنسيقك الخاص) */
+        /* التنسيق للوضوح */
         body { font-family: Tahoma, Arial, sans-serif; padding: 20px; background-color: #f4f7f6; }
         h1 { color: #0056b3; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
         input[type="text"] { padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; width: 300px; }
@@ -42,8 +42,7 @@
 
             resultsDiv.innerHTML = '<p style="color: #0056b3;">...جاري البحث</p>';
 
-            // 🚀 بناء الرابط باستخدام Path Parameter (يتطابق مع URI Template: search/{q})
-            // encodeURIComponent يضمن التعامل الصحيح مع المسافات والأحرف الخاصة في كلمة البحث
+            // 🎯 بناء الرابط باستخدام Path Parameter (يتطابق مع URI Template: search/{q})
             const finalURL = `${API_BASE_URL}/${encodeURIComponent(searchQuery)}`;
             
             // 🚀 استدعاء الـ API باستخدام Fetch
@@ -64,7 +63,7 @@
                     resultsDiv.innerHTML = `<div class="error-message">
                                                 حدث خطأ أثناء الجلب: ${error.message}. <br>
                                                 الرجاء التأكد من: <br>
-                                                1. **إعدادات APEX** (URI Template هو **search/{q}**). <br>
+                                                1. **APEX URI Template** هو **search/{q}**. <br>
                                                 2. **المعلمات** (إضافة المعلمة **q** في المعالج).
                                             </div>`;
                     console.error('Fetch Error:', error);
