@@ -261,6 +261,7 @@ const FatwaDetail = ({ fatwa, onIdClick, onBack, relatedFatwas, onRelatedFatwaSe
               onClick={(e) => {
                 e.preventDefault();
                 onIdClick(fatwaId);
+                window.history.pushState({}, "", `/fatawa/fatwa/${fatwaId}/`);
               }}
               className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline mx-1"
             >
