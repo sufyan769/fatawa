@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
   <head>
-    <meta http-equiv="refresh" content="0; url=/fatawa/" />
+    <meta charset="UTF-8" />
+    <meta http-equiv="refresh" content="0; url=/" />
     <script>
-      // هذا يجعل أي مسار يعيدك إلى الصفحة الرئيسية
-      var redirectTo = "/fatawa/" + window.location.pathname.split("/fatawa/")[1];
-      window.location.replace(redirectTo);
+      // يعيد أي رابط إلى index.html مع الاحتفاظ بالمسار
+      var redirect = window.location.pathname.replace("/fatawa", "");
+      window.location.replace("/fatawa/" + "#" + redirect);
     </script>
   </head>
-  <body>
-  </body>
+  <body></body>
 </html>
