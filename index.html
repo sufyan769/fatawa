@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>موسوعة الفتاوى</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -36,6 +37,7 @@
   <script type="importmap">
 {
   "imports": {
+
     "react": "https://esm.sh/react@18.2.0",
     "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
@@ -50,6 +52,7 @@
 // --- Start of combined script ---
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { Helmet } from "react-helmet"; // ✅ أضفه هنا
 import ReactDOM from 'react-dom/client';
 
 // --- Constants ---
@@ -610,50 +613,76 @@ useEffect(() => {
       window.location.href = '/fatawa/';
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
-      <main className="container mx-auto px-4 py-8 relative">
-        <div className="absolute top-4 left-4 z-10">
-            <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+return (
+  <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+    {/* ✅ وسوم الـSEO توضع هنا */}
+    <Helmet>
+      <meta name="description" content="موسوعة الفتاوى — بحث شامل في أكثر من 250 ألف فتوى شرعية موثوقة." />
+      <meta name="keywords" content="فتاوى, إسلام ويب, ابن باز, ابن عثيمين, أحكام شرعية, الفقه الإسلامي" />
+      <meta name="robots" content="index, follow" />
+      <meta property="og:title" content="موسوعة الفتاوى الإسلامية" />
+      <meta property="og:description" content="ابحث في آلاف الفتاوى الموثوقة بسهولة." />
+      <meta property="og:url" content="https://sufyan769.github.io/fatawa/" />
+      <meta property="og:type" content="website" />
+      <script type="application/ld+json">{`
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "موسوعة الفتاوى",
+          "url": "https://sufyan769.github.io/fatawa/",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://sufyan769.github.io/fatawa/fatwa/{search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+      `}</script>
+    </Helmet>
+    {/* ✅ انتهت الوسوم */}
+
+    <main className="container mx-auto px-4 py-8 relative">
+      <div className="absolute top-4 left-4 z-10">
+        <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+      </div>
+
+      <header className="text-center mb-8">
+        <div className="flex justify-center items-center gap-4 text-emerald-600 dark:text-emerald-400">
+          <BookIcon className="w-12 h-12" />
+          <h1 className="text-5xl font-bold">موسوعة الفتاوى</h1>
         </div>
-        <header className="text-center mb-8">
-            <div className="flex justify-center items-center gap-4 text-emerald-600 dark:text-emerald-400">
-                <BookIcon className="w-12 h-12"/>
-                <h1 className="text-5xl font-bold">موسوعة الفتاوى</h1>
-            </div>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-                محرك بحث متخصص في الفتاوى الشرعية مع إمكانية التنقل بين الفتاوى المترابطة
-            </p>
+        <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+          محرك بحث متخصص في الفتاوى الشرعية مع إمكانية التنقل بين الفتاوى المترابطة
+        </p>
+      </header>
 
-            
-        </header>
+      {!selectedFatwa && <FeaturedQuestions fatwas={fatwas} onQuestionClick={handleFatwaSelect} />}
 
-        {!selectedFatwa && <FeaturedQuestions fatwas={fatwas} onQuestionClick={handleFatwaSelect} />}
-        
-        <SearchInput onSearch={handleSearch} isLoading={isLoading} />
-        
-        {error && <div className="text-center text-red-500 bg-red-100 dark:bg-red-900 dark:text-red-300 p-4 rounded-md my-4 whitespace-pre-wrap">{error}</div>}
-        
-        <div className="mt-10">
-            {isLoading ? (
-                <LoadingSpinner />
-            ) : selectedFatwa ? (
-                <FatwaDetail 
-                  fatwa={selectedFatwa} 
-                  onIdClick={handleIdClick} 
-                  onBack={handleBackToList}
-                  relatedFatwas={relatedFatwas}
-                  onRelatedFatwaSelect={handleRelatedFatwaSelect}
-                />
-            ) : (
-                <FatwaList fatwas={fatwas} onFatwaSelect={handleFatwaSelect} title={listTitle} />
-            )}
+      <SearchInput onSearch={handleSearch} isLoading={isLoading} />
+
+      {error && (
+        <div className="text-center text-red-500 bg-red-100 dark:bg-red-900 dark:text-red-300 p-4 rounded-md my-4 whitespace-pre-wrap">
+          {error}
         </div>
-      </main>
-    </div>
-  );
-};
+      )}
 
+      <div className="mt-10">
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : selectedFatwa ? (
+          <FatwaDetail
+            fatwa={selectedFatwa}
+            onIdClick={handleIdClick}
+            onBack={handleBackToList}
+            relatedFatwas={relatedFatwas}
+            onRelatedFatwaSelect={handleRelatedFatwaSelect}
+          />
+        ) : (
+          <FatwaList fatwas={fatwas} onFatwaSelect={handleFatwaSelect} title={listTitle} />
+        )}
+      </div>
+    </main>
+  </div>
+);
 
 
 // --- App Mount ---
