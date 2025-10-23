@@ -120,7 +120,7 @@ const CheckIcon = ({ className }) => (
 );
 
 
-// --- Other Components ---
+// --- UI Components ---
 
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center p-8">
@@ -257,10 +257,11 @@ const FatwaDetail = ({ fatwa, onIdClick, onBack, relatedFatwas, onRelatedFatwaSe
           return (
             <a
               key={index}
-              href={`#fatwa-${fatwaId}`}
+              href={`/fatawa/fatwa/${fatwaId}/`}
               onClick={(e) => {
                 e.preventDefault();
                 onIdClick(fatwaId);
+                // The history is pushed by the parent onRelatedFatwaSelect handler
               }}
               className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline mx-1"
             >
@@ -518,11 +519,8 @@ const App = () => {
         );
 
         const results = await Promise.all(searchPromises);
-        
         const combinedItems = results.flatMap(result => result.items || []);
-        
         const uniqueItems = Array.from(new Map(combinedItems.map(item => [item.id, item])).values());
-
         setFatwas(uniqueItems);
         setSelectedFatwa(null);
 
@@ -538,49 +536,70 @@ const App = () => {
     }
   }, [fetchRelatedFatwas]);
 
-  // ✅ عند فتح الرابط مباشرة مثل /fatawa/fatwa/177619/
-  useEffect(() => {
-    const pathParts = window.location.pathname.split("/");
-    const fatwaIndex = pathParts.indexOf("fatwa");
-    if (fatwaIndex !== -1 && pathParts[fatwaIndex + 1]) {
-      const id = pathParts[fatwaIndex + 1].replace(/\D/g, "");
-      if (id) {
-        fetchFatwas(id, true);
-      }
-    }
-  }, []);
 
   useEffect(() => {
-    const randomTerm = RANDOM_SEARCH_TERMS[Math.floor(Math.random() * RANDOM_SEARCH_TERMS.length)];
-    setListTitle('فتاوى مختارة');
-    fetchFatwas(randomTerm);
-  }, []);
+    const handlePopState = () => {
+        const pathParts = window.location.pathname.split("/");
+        const fatwaIndex = pathParts.indexOf("fatwa");
+        let idFromPath = null;
+        if (fatwaIndex !== -1 && pathParts[fatwaIndex + 1]) {
+            const id = pathParts[fatwaIndex + 1].replace(/\D/g, "");
+            if (id) {
+                idFromPath = id;
+            }
+        }
+
+        if (idFromPath) {
+            fetchFatwas(idFromPath, true);
+        } else {
+            setSelectedFatwa(null);
+            if (fatwas.length === 0) {
+                 const randomTerm = RANDOM_SEARCH_TERMS[Math.floor(Math.random() * RANDOM_SEARCH_TERMS.length)];
+                 setListTitle('فتاوى مختارة');
+                 fetchFatwas(randomTerm);
+            }
+        }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    handlePopState(); // Initial load check
+
+    return () => {
+        window.removeEventListener('popstate', handlePopState);
+    };
+  }, [fetchFatwas]);
 
   const handleSearch = (query) => {
     setListTitle(`نتائج البحث عن: "${query}"`);
     fetchFatwas(query);
+    window.history.pushState({}, '', `/`);
   };
 
   const handleFatwaSelect = (fatwa) => {
     setSelectedFatwa(fatwa);
     fetchRelatedFatwas(fatwa);
+    window.history.pushState({}, fatwa.question, `/fatawa/fatwa/${fatwa.id}/`);
     window.scrollTo(0, 0);
   };
   
   const handleIdClick = (id) => {
+    // When an ID is clicked inside a fatwa detail, we fetch it and update the URL
     fetchFatwas(id.toString(), true);
+    window.history.pushState({}, '', `/fatawa/fatwa/${id}/`);
     window.scrollTo(0, 0);
   };
 
   const handleRelatedFatwaSelect = (fatwa) => {
     setSelectedFatwa(fatwa);
     fetchRelatedFatwas(fatwa);
+    window.history.pushState({}, fatwa.question, `/fatawa/fatwa/${fatwa.id}/`);
     window.scrollTo(0, 0);
   };
 
   const handleBackToList = () => {
     setSelectedFatwa(null);
     setRelatedFatwas([]);
+    window.history.pushState({}, '', '/');
   };
 
   return (
