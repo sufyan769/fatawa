@@ -611,8 +611,6 @@ useEffect(() => {
   };
 
   return (
-
-
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
       <main className="container mx-auto px-4 py-8 relative">
         <div className="absolute top-4 left-4 z-10">
@@ -621,29 +619,14 @@ useEffect(() => {
         <header className="text-center mb-8">
             <div className="flex justify-center items-center gap-4 text-emerald-600 dark:text-emerald-400">
                 <BookIcon className="w-12 h-12"/>
-                <h1 className="text-5xl font-bold">هل يجوز</h1>
+                <h1 className="text-5xl font-bold">موسوعة الفتاوى</h1>
             </div>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-                هل يجوز  فتاوى على منهج السلف
+                محرك بحث متخصص في الفتاوى الشرعية مع إمكانية التنقل بين الفتاوى المترابطة
             </p>
 
-
+            
         </header>
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "موسوعة الفتاوى",
-  "url": "https://sufyan769.github.io/fatawa/",
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": "https://sufyan769.github.io/fatawa/fatwa/{search_term_string}",
-    "query-input": "required name=search_term_string"
-  }
-}
-</script>
-
 
         {!selectedFatwa && <FeaturedQuestions fatwas={fatwas} onQuestionClick={handleFatwaSelect} />}
         
@@ -670,6 +653,7 @@ useEffect(() => {
     </div>
   );
 };
+
 
 
 // --- App Mount ---
