@@ -158,6 +158,7 @@
         const [isFading, setIsFading] = useState(false);
         const [fontSize, setFontSize] = useState(16);
         const [view, setView] = useState("home");
+        const basePath = '/fatawa/';
 
         const fetchFatwaById = useCallback(async (id) => {
           setIsLoading(true);
@@ -221,31 +222,34 @@
           }
         }, []);
 
-        useEffect(() => {
-          const handleRouting = () => {
-            const hash = window.location.hash;
-            const match = hash.match(/^#\/fatwa\/(\d+)$/);
-            if (match && match[1]) {
-                const fatwaId = parseInt(match[1], 10);
+        const handleRouting = useCallback(() => {
+            const path = window.location.pathname;
+            const fatwaMatch = path.match(new RegExp(`^${basePath}(\\d+)$`));
+    
+            if (fatwaMatch && fatwaMatch[1]) {
+                const fatwaId = parseInt(fatwaMatch[1], 10);
                 if (!isNaN(fatwaId)) {
                     setView("fatwa");
                     fetchFatwaById(fatwaId);
                 }
             } else {
                 setView("home");
+                setCurrentFatwa(null);
+                setError(null);
                 if (randomQuestions.length === 0) {
                   fetchRandomQuestions();
                 }
             }
-          };
+        }, [basePath, randomQuestions.length, fetchFatwaById, fetchRandomQuestions]);
 
+        useEffect(() => {
           handleRouting(); // Initial call
-          window.addEventListener('hashchange', handleRouting);
+          window.addEventListener('popstate', handleRouting);
 
           return () => {
-            window.removeEventListener('hashchange', handleRouting);
+            window.removeEventListener('popstate', handleRouting);
           };
-        }, [randomQuestions.length, fetchFatwaById, fetchRandomQuestions]);
+        }, [handleRouting]);
 
         useEffect(() => {
           if (randomQuestions.length > 0 && view === 'home') {
@@ -269,7 +273,8 @@
         const decreaseFontSize = () => setFontSize(prev => Math.max(prev - 2, 12));
         
         const goHome = () => {
-          window.location.hash = '/';
+          history.pushState({}, '', basePath);
+          handleRouting();
         };
 
         return (
@@ -293,7 +298,7 @@
                       <div className={`transition-opacity duration-500 ${isFading ? 'opacity-0' : 'opacity-100'}`}>
                         {visibleQuestion && (
                           <div className="text-center w-full">
-                            <a href={`#/fatwa/${visibleQuestion.id}`} target="_blank" rel="noopener noreferrer" className="text-lg md:text-xl font-medium text-gray-800 cursor-pointer hover:text-blue-700 transition-colors px-4">
+                            <a href={`${basePath}${visibleQuestion.id}`} target="_blank" rel="noopener noreferrer" className="text-lg md:text-xl font-medium text-gray-800 cursor-pointer hover:text-blue-700 transition-colors px-4">
                               {visibleQuestion.question.length > 120 ? `${visibleQuestion.question.substring(0, 120)}...` : visibleQuestion.question}
                             </a>
                             <div className="mt-2 text-sm text-blue-600 flex items-center justify-center gap-1">
@@ -308,7 +313,7 @@
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
                     {randomQuestions.slice(0, 18).map((fatwa) => (
-                      <a key={fatwa.id} href={`#/fatwa/${fatwa.id}`} target="_blank" rel="noopener noreferrer" className="block h-full">
+                      <a key={fatwa.id} href={`${basePath}${fatwa.id}`} target="_blank" rel="noopener noreferrer" className="block h-full">
                         <Card className="h-full hover:shadow-md transition-shadow cursor-pointer border border-blue-100">
                           <CardContent className="p-4 pt-4">
                             <div className="flex items-start gap-3">
@@ -350,7 +355,7 @@
                       <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[40rem] overflow-y-auto p-1">
                           {searchResults.map((fatwa) => (
-                            <a key={fatwa.id} href={`#/fatwa/${fatwa.id}`} target="_blank" rel="noopener noreferrer" className="block p-4 border border-gray-200 rounded-lg hover:bg-blue-50 transition cursor-pointer">
+                            <a key={fatwa.id} href={`${basePath}${fatwa.id}`} target="_blank" rel="noopener noreferrer" className="block p-4 border border-gray-200 rounded-lg hover:bg-blue-50 transition cursor-pointer">
                               <div className="flex items-center gap-2 mb-2">
                                 <Hash className="text-blue-600" size={16} />
                                 <span className="font-semibold text-blue-700">السؤال رقم: {fatwa.id}</span>
