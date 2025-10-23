@@ -627,14 +627,31 @@ useEffect(() => {
                 هل يجوز  فتاوى على منهج السلف
             </p>
 
-          <meta name="description" content="موسوعة الفتاوى — بحث شامل في أكثر من 250 ألف فتوى شرعية موثوقة.">
-          <meta name="keywords" content="فتاوى, إسلام ويب, ابن باز, ابن عثيمين, أحكام شرعية, الفقه الإسلامي">
-          <meta name="robots" content="index, follow">
-          <meta property="og:title" content="موسوعة الفتاوى الإسلامية">
-          <meta property="og:description" content="ابحث في آلاف الفتاوى الموثوقة بسهولة.">
-          <meta property="og:url" content="https://sufyan769.github.io/fatawa/">
-          <meta property="og:type" content="website">
+
         </header>
+        <meta name="description" content="موسوعة الفتاوى — بحث شامل في أكثر من 250 ألف فتوى شرعية موثوقة.">
+<meta name="keywords" content="فتاوى, إسلام ويب, ابن باز, ابن عثيمين, أحكام شرعية, الفقه الإسلامي">
+<meta name="robots" content="index, follow">
+
+<meta property="og:title" content="موسوعة الفتاوى الإسلامية">
+<meta property="og:description" content="ابحث في آلاف الفتاوى الموثوقة بسهولة.">
+<meta property="og:url" content="https://sufyan769.github.io/fatawa/">
+<meta property="og:type" content="website">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "موسوعة الفتاوى",
+  "url": "https://sufyan769.github.io/fatawa/",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://sufyan769.github.io/fatawa/fatwa/{search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+
 
         {!selectedFatwa && <FeaturedQuestions fatwas={fatwas} onQuestionClick={handleFatwaSelect} />}
         
