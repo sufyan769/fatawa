@@ -7,14 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Add Babel for in-browser JSX transformation -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         darkMode: 'class',
       }
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet">
     <style>
       body {
         font-family: 'Noto Naskh Arabic', sans-serif;
@@ -37,7 +37,9 @@
 {
   "imports": {
     "react": "https://esm.sh/react@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
   }
 }
 </script>
@@ -45,14 +47,17 @@
   <body class="bg-gray-50 dark:bg-gray-900">
     <div id="root"></div>
     <script type="text/babel" data-type="module">
+// --- Start of combined script ---
+
 import React, { useState, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom/client';
 
 // --- Constants ---
 const API_BASE_URL = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/fatwas/search/';
+const API_ID_LOOKUP_BASE_URL = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/fatwas/search_source/';
 const RANDOM_SEARCH_TERMS = ['الصلاة', 'الزكاة', 'الحج', 'الصوم', 'الطلاق', 'الزواج'];
 
-// --- Icons ---
+// --- Icon Components ---
 const SearchIcon = ({ className }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -114,7 +119,8 @@ const CheckIcon = ({ className }) => (
     </svg>
 );
 
-// --- Components ---
+
+// --- Other Components ---
 
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center p-8">
@@ -194,6 +200,7 @@ const FatwaList = ({ fatwas, onFatwaSelect, title }) => {
   );
 };
 
+
 const FatwaDetail = ({ fatwa, onIdClick, onBack, relatedFatwas, onRelatedFatwaSelect }) => {
   const [fontLevel, setFontLevel] = useState(() => {
     const savedLevel = localStorage.getItem('fatwaFontLevel');
@@ -213,7 +220,7 @@ const FatwaDetail = ({ fatwa, onIdClick, onBack, relatedFatwas, onRelatedFatwaSe
   };
 
   const handleCopy = () => {
-    const textToCopy = `السؤال: ${fatwa.question || ''}\n\nالجواب: ${fatwa.answer || ''}\n\nالمصدر: ${fatwa.source || ''}`;
+    const textToCopy = `السؤال: ${fatwa.question}\n\nالجواب: ${fatwa.answer}\n\nالمصدر: ${fatwa.source}`;
     navigator.clipboard.writeText(textToCopy).then(() => {
         setCopyStatus('copied');
         setTimeout(() => setCopyStatus('idle'), 2000);
@@ -225,8 +232,8 @@ const FatwaDetail = ({ fatwa, onIdClick, onBack, relatedFatwas, onRelatedFatwaSe
   const handleShare = () => {
     if (navigator.share) {
         navigator.share({
-            title: `فتوى: ${fatwa.question || ''}`,
-            text: `السؤال: ${fatwa.question || ''}\n\nالجواب: ${fatwa.answer || ''}\n\nالمصدر: ${fatwa.source || ''}`,
+            title: `فتوى: ${fatwa.question}`,
+            text: `السؤال: ${fatwa.question}\n\nالجواب: ${fatwa.answer}\n\nالمصدر: ${fatwa.source}`,
             url: window.location.href,
         }).catch(error => console.log('Error sharing', error));
     } else {
@@ -236,15 +243,15 @@ const FatwaDetail = ({ fatwa, onIdClick, onBack, relatedFatwas, onRelatedFatwaSe
   };
 
   const parseAndLinkAnswer = (text) => {
-    if (!text) {
-        return null;
+    if (typeof text !== 'string' || !text.trim()) {
+        return <span className="text-gray-500 italic">لا يتوفر جواب لهذه الفتوى حالياً.</span>;
     }
     const regex = /(\[\d+\]|\b\d{3,}\b)/g;
     const parts = text.split(regex);
 
     return parts.map((part, index) => {
       if (index % 2 === 1) {
-        const numberString = part.replace(/\D/g, '');
+        const numberString = part.replace(/\D/g, ''); 
         const fatwaId = parseInt(numberString, 10);
         if (!isNaN(fatwaId)) {
           return (
@@ -262,7 +269,6 @@ const FatwaDetail = ({ fatwa, onIdClick, onBack, relatedFatwas, onRelatedFatwaSe
           );
         }
       }
-
       return part.split('\n').map((line, i) => (
         <React.Fragment key={`${index}-${i}`}>
             {line}
@@ -301,9 +307,9 @@ const FatwaDetail = ({ fatwa, onIdClick, onBack, relatedFatwas, onRelatedFatwaSe
         </div>
         <div className="max-w-none text-gray-700 dark:text-gray-300">
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">الجواب:</h2>
-          <p className={`whitespace-pre-wrap ${fontClasses[fontLevel]} ${lineHeights[fontLevel]}`}>
+          <div className={`whitespace-pre-wrap ${fontClasses[fontLevel]} ${lineHeights[fontLevel]}`}>
             {parseAndLinkAnswer(fatwa.answer)}
-          </p>
+          </div>
         </div>
         <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -333,6 +339,7 @@ const FatwaDetail = ({ fatwa, onIdClick, onBack, relatedFatwas, onRelatedFatwaSe
     </div>
   );
 };
+
 
 const FeaturedQuestions = ({ fatwas, onQuestionClick }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -382,7 +389,8 @@ const ThemeToggle = ({ theme, toggleTheme }) => {
   );
 };
 
-// --- Main App Logic ---
+
+// --- Main App Component ---
 
 const App = () => {
   const [fatwas, setFatwas] = useState([]);
@@ -458,38 +466,29 @@ const App = () => {
         const targetId = parseInt(numericQuery, 10);
         
         try {
-            const directLookupUrl = `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/fatwas/${targetId}`;
-            const directResponse = await fetch(directLookupUrl);
+            const directLookupUrl = `${API_ID_LOOKUP_BASE_URL}${targetId}`;
+            const response = await fetch(directLookupUrl);
 
-            if (directResponse.ok) {
-                const foundFatwa = await directResponse.json();
-                if (foundFatwa && foundFatwa.id) {
-                    setSelectedFatwa(foundFatwa);
-                    await fetchRelatedFatwas(foundFatwa);
-                    setIsLoading(false);
-                    return;
-                }
+            if (!response.ok) {
+                throw new Error(`خطأ في الشبكة: ${response.statusText}`);
             }
-            console.warn(`Attempt 1 (Direct fetch) for ID ${targetId} failed or returned no data.`);
 
-            const sourceSearchUrl = `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/fatwas/search_source/${targetId}`;
-            const sourceSearchResponse = await fetch(sourceSearchUrl);
-
-            if (sourceSearchResponse.ok) {
-                const sourceSearchData = await sourceSearchResponse.json();
-                const items = sourceSearchData.items || [];
-                if (items.length > 0) {
-                    const foundFatwa = items[0];
-                    setSelectedFatwa(foundFatwa);
-                    await fetchRelatedFatwas(foundFatwa);
-                    setIsLoading(false);
-                    return;
-                }
-            }
-            console.warn(`Attempt 2 (Source-specific search) for ID ${targetId} failed or returned no data.`);
+            const data = await response.json();
+            const rawItems = data.items || [];
             
-            setError(`لم يتم العثور على فتوى بالمعرف المحدد (${targetId}). قد يكون الرقم غير صحيح أو أن الفتوى غير متوفرة.`);
-            setSelectedFatwa(null);
+            if (rawItems.length > 0) {
+                const foundFatwa = {
+                    id: rawItems[0].id,
+                    question: rawItems[0].question,
+                    answer: rawItems[0].text, 
+                    source: rawItems[0].source,
+                };
+                setSelectedFatwa(foundFatwa);
+                await fetchRelatedFatwas(foundFatwa);
+            } else {
+                setError(`لم يتم العثور على فتوى بالمعرف المحدد (${targetId}). قد يكون الرقم غير صحيح أو أن الفتوى غير متوفرة.`);
+                setSelectedFatwa(null);
+            }
 
         } catch (err) {
             if (err instanceof Error) {
@@ -501,7 +500,7 @@ const App = () => {
         } finally {
             setIsLoading(false);
         }
-        return;
+        return; 
     }
 
     try {
@@ -512,14 +511,16 @@ const App = () => {
             fetch(`${API_BASE_URL}${encodeURIComponent(q)}`).then(res => {
                 if (!res.ok) {
                     console.error(`Search for query "${q}" failed with status: ${res.status}`);
-                    return { items: [] };
+                    return { items: [] }; 
                 }
                 return res.json();
             })
         );
 
         const results = await Promise.all(searchPromises);
+        
         const combinedItems = results.flatMap(result => result.items || []);
+        
         const uniqueItems = Array.from(new Map(combinedItems.map(item => [item.id, item])).values());
 
         setFatwas(uniqueItems);
@@ -536,6 +537,7 @@ const App = () => {
       setIsLoading(false);
     }
   }, [fetchRelatedFatwas]);
+
 
   useEffect(() => {
     const randomTerm = RANDOM_SEARCH_TERMS[Math.floor(Math.random() * RANDOM_SEARCH_TERMS.length)];
@@ -612,11 +614,10 @@ const App = () => {
   );
 };
 
+
 // --- App Mount ---
+
 const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
-}
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
@@ -624,6 +625,7 @@ root.render(
   </React.StrictMode>
 );
 
+// --- End of combined script ---
     </script>
   </body>
 </html>
