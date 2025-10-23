@@ -537,37 +537,45 @@ const App = () => {
   }, [fetchRelatedFatwas]);
 
 
-  useEffect(() => {
-    const handlePopState = () => {
-        const pathParts = window.location.pathname.split("/");
-        const fatwaIndex = pathParts.indexOf("fatwa");
-        let idFromPath = null;
-        if (fatwaIndex !== -1 && pathParts[fatwaIndex + 1]) {
-            const id = pathParts[fatwaIndex + 1].replace(/\D/g, "");
-            if (id) {
-                idFromPath = id;
-            }
-        }
+useEffect(() => {
+  const handlePopState = () => {
+    const pathParts = window.location.pathname.split("/");
+    const fatwaIndex = pathParts.indexOf("fatwa");
+    let idFromPath = null;
 
-        if (idFromPath) {
-            fetchFatwas(idFromPath, true);
-        } else {
-            setSelectedFatwa(null);
-            if (fatwas.length === 0) {
-                 const randomTerm = RANDOM_SEARCH_TERMS[Math.floor(Math.random() * RANDOM_SEARCH_TERMS.length)];
-                 setListTitle('فتاوى مختارة');
-                 fetchFatwas(randomTerm);
-            }
-        }
-    };
+    // 🔹 فحص الروابط بدون #
+    if (fatwaIndex !== -1 && pathParts[fatwaIndex + 1]) {
+      const id = pathParts[fatwaIndex + 1].replace(/\D/g, "");
+      if (id) idFromPath = id;
+    }
 
-    window.addEventListener('popstate', handlePopState);
-    handlePopState(); // Initial load check
+    // 🔹 فحص الروابط التي تحتوي على #
+    if (!idFromPath && window.location.hash.includes('/fatwa/')) {
+      const id = window.location.hash.split('/fatwa/')[1]?.replace(/\D/g, '');
+      if (id) idFromPath = id;
+    }
 
-    return () => {
-        window.removeEventListener('popstate', handlePopState);
-    };
-  }, [fetchFatwas]);
+    // 🔹 تحميل الفتوى المطلوبة أو عرض الصفحة الرئيسية
+    if (idFromPath) {
+      fetchFatwas(idFromPath, true);
+    } else {
+      setSelectedFatwa(null);
+      if (fatwas.length === 0) {
+        const randomTerm = RANDOM_SEARCH_TERMS[Math.floor(Math.random() * RANDOM_SEARCH_TERMS.length)];
+        setListTitle('فتاوى مختارة');
+        fetchFatwas(randomTerm);
+      }
+    }
+  };
+
+  window.addEventListener('popstate', handlePopState);
+  handlePopState(); // تشغيل عند التحميل الأول
+
+  return () => {
+    window.removeEventListener('popstate', handlePopState);
+  };
+}, [fetchFatwas]);
+
 
   const handleSearch = (query) => {
     setListTitle(`نتائج البحث عن: "${query}"`);
