@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset 
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+<!-- ✅ توليد روابط الفتاوى -->
+<!-- ندرج فقط 1000 رابط لكل ملف Sitemap (حتى لا يتجاوز الحد) -->
+<!-- هذا هو الجزء الأول، ويمكن إنشاء ملفات إضافية لاحقًا مثل sitemap2.xml, sitemap3.xml -->
+
+<url>
+  <loc>https://sufyan769.github.io/fatawa/</loc>
+  <priority>1.0</priority>
+  <changefreq>daily</changefreq>
+</url>
+
+<!-- مثال ديناميكي للروابط -->
+<!-- يمكنك زيادة العدد أو توليد عدة ملفات بنفس الصيغة -->
+<!-- إذا أردت توليد كامل الروابط، استخدم السكربت أدناه -->
+
+</urlset>
